@@ -12,10 +12,10 @@ profiler_stop() ->
 	Pid = dbg:trace_client(file, "/tmp/trace.dmp", {fun handler/2, []}),
 	ok.
 
-handler(end_of_trace, Return) -> 
+handler(end_of_trace, Return) ->
 	Output = jsx:encode(Return),
 	file:write_file("dump.json", Output);
-handler(M, Return) -> 
+handler(M, Return) ->
 	Return ++ parse(M).
 
 parse_trace(L) -> parse_trace(L, {0,0,0,0}).
@@ -34,9 +34,9 @@ parse_trace([X|Xs], {Ohbs, Hbs, Ohs, Hs}) ->
 
 parse({trace_ts, Pid, Type, L, Timestamp}) ->
 	{Ohbs, Hbs, Ohs, Hs} = parse_trace(L),
-	[{{<<"pid">>, list_to_binary(pid_to_list(Pid))}, 
+	[[{<<"pid">>, list_to_binary(pid_to_list(Pid))},
 	 {<<"type">>, <<"minor">>},
 	 {<<"old_heap_size">>, Ohs},
 	 {<<"heap_size">>, Hs},
-	 {<<"timestamp">>, erlang:convert_time_unit(Timestamp, native, millisecond) + erlang:time_offset(millisecond)}}
+	 {<<"timestamp">>, erlang:convert_time_unit(Timestamp, native, millisecond) + erlang:time_offset(millisecond)}]
 	].
