@@ -7,10 +7,9 @@ polling_start() ->
 	spawn(fun () -> polling_start([]) end).
 
 polling_start(L) -> 
+	Procs = erlang:processes() -- [self()],
 	dbg:tracer(port, dbg:trace_port(file, "/tmp/trace.dmp")),
-	dbg:p(processes, [garbage_collection, monotonic_timestamp]),
-
-	Procs = erlang:processes(),
+	dbg:p(Procs, [garbage_collection, monotonic_timestamp]),
 	Result = [poll_func(X) || X <- Procs],
 	receive
 		stop -> 
