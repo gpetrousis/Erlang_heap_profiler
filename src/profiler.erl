@@ -17,7 +17,7 @@ polling_start(L) ->
 		stop -> 
 			dbg:stop_clear(),
 			Pid = dbg:trace_client(file, "/tmp/trace.dmp",
-                                               {fun handler/2, Result}),
+                                               {fun handler/2, Result ++ L}),
                         erlang:monitor(process, Pid),
                         receive M -> M end
 	after 
