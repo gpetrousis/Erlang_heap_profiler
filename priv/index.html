@@ -30,8 +30,8 @@
                       inner.push(current.pid);
 
                   }
-                  if (!(current.pid in timeseries)) {
-                      pids[current.pid] = [current]
+                  if (!(current.pid in pids)) {
+                      pids[current.pid] = [current];
                   }
                   else {
                       pids[current.pid].push(current);
@@ -54,7 +54,7 @@
                       while (i > -1) {
                           var new_time = elements[i].timestamp - first_time;
                           if (new_time <= parseInt(k)) {
-                              sz = elements[i].heap_size;
+                              sz = elements[i].heap_size + elements[i].old_heap_size;
                               break;
                           }
                           i--;
