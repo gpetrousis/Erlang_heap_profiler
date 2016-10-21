@@ -11,34 +11,62 @@
       // Set a callback to run when the Google Visualization API is loaded.
       google.charts.setOnLoadCallback(drawChart);
 
+
       // Callback that creates and populates a data table,
       // instantiates the pie chart, passes in the data and
       // draws it.
       function drawChart() {
+          $.getJSON("data", function(jdata) {
+              var inner = ['Timestamp'];
+              var timeseries = {};
+              var pids = [];
+              var arr = [inner];
+              $.each(jdata, function(i, current) {
+                  if ($.inArray(current.pid, inner) < 0) {
+                      inner.push(current.pid);
+                      pids.push(current.pid);
+                  }
+                  if (!(current.timestamp in timeseries)) {
+                      timeseries[current.timestamp] = [current]
+                  }
+                  else {
+                      timeseries[current.timestamp].push(current);
+                  }
+              });
 
-		$.getJSON("data", function(jdata) {
-        var data = new google.visualization.DataTable();
-        data.addColumn('string', 'Topping');
-        data.addColumn('number', 'Slices');
-        data.addRows([
-          ['Mushrooms', 3],
-          ['Onions', 1],
-          ['Olives', 1],
-          ['Zucchini', 1],
-          ['Pepperoni', 2]
-        ]);
+              $.each(timeseries, function(k, list) {
+                  var local = [k];
+                  $.each(pids, function(i, pid) {
+                      var sz = null;
+                      var j = parseInt(k);
+                      while (sz == null) {
+                          $.each(timeseries[j], function(i, current) {
+                            if (current.pid == pid)
+                              sz = current.heap_size + current.old_heap_size;
+                          });
+                          j--;
+                          if (j < 0)
+                              break;
+                      }
+                      local.push(sz);
+                  });
+                  arr.push(local);
+              });
+              console.log(arr);
+              var data = google.visualization.arrayToDataTable(arr);
 
-        // Set chart options
-        var options = {'title':'How Much Pizza I Ate Last Night',
-                       'width':400,
-                       'height':300};
+              // Set chart options
+              var options = {'title':'How Much Pizza I Ate Last Night', 'width':600, 'height':300,
+                  isStacked : true,
+                  interpolateNulls : true,
+                  hAxis: {title : 'Time', titleTextStyle : {color : '#00000'}},
+                  vAxis: {minValue:0}
+              };
 
-        // Instantiate and draw our chart, passing in some options.
-        var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
-		});
-
-        // Create the data table.
+              // Instantiate and draw our chart, passing in some options.
+              var chart = new google.visualization.AreaChart(document.getElementById('chart_div'));
+              chart.draw(data, options);
+          });
       }
     </script>
   </head>
