@@ -7,12 +7,15 @@ polling_start() ->
 	spawn(fun () -> polling_start([]) end).
 
 polling_start(L) -> 
+	dbg:tracer(port, dbg:trace_port(file, "/tmp/trace.dmp")),
+	dbg:p(processes, [garbage_collection, monotonic_timestamp]),
+
 	Procs = erlang:processes(),
 	Result = [poll_func(X) || X <- Procs],
 	receive
 		stop -> 
-			Output = jsx:prettify(jsx:encode(L)),
-			file:write_file("dump.json", Output)
+			dbg:stop_clear(),
+			dbg:trace_client(file, "/tmp/trace.dmp", {fun handler/2, L})
 	after 
 		?interval -> 
 			polling_start(Result++L)
@@ -20,13 +23,14 @@ polling_start(L) ->
 
 polling_stop(Pid) ->
 	Pid ! stop,
+
 	ok.
 
 poll_func(Pid) ->
 	{_,Data} = erlang:process_info(Pid, garbage_collection_info),
 	{_, _, Ohs, Hs} = parse_trace(Data),
 	[{<<"pid">>, list_to_binary(pid_to_list(Pid))}, 
-	 {<<"type">>, <<"minor">>},
+	 {<<"type">>, <<"poll">>},
 	 {<<"old_heap_size">>, Ohs},
 	 {<<"heap_size">>, Hs},
 	 {<<"timestamp">>, erlang:convert_time_unit(erlang:monotonic_time(), native, millisecond) + erlang:time_offset(millisecond)}].
@@ -43,7 +47,8 @@ stop() ->
 	ok.
 
 handler(end_of_trace, Return) ->
-	Output = jsx:encode(Return),
+	Sorted = lists:sort(fun ([_,_,_,_,{<<"timestamp">>,X}], [_,_,_,_,{<<"timestamp">>,Y}]) -> X < Y end, Return),
+	Output = jsx:prettify(jsx:encode(Sorted)),
 	file:write_file("dump.json", Output);
 handler(M, Return) ->
 	Return ++ parse(M).
@@ -70,3 +75,4 @@ parse({trace_ts, Pid, _, L, Timestamp}) ->
 	 {<<"heap_size">>, Hs},
 	 {<<"timestamp">>, erlang:convert_time_unit(Timestamp, native, millisecond) + erlang:time_offset(millisecond)}]
 	].
+
