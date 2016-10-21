@@ -19,15 +19,22 @@
           $.getJSON("data", function(jdata) {
               var inner = ['Timestamp'];
               var timeseries = {};
-              var pids = [];
+              var pids = {};
               var arr = [inner];
               var first_time = jdata[0].timestamp;
               var last_time = jdata[jdata.length - 1];
 
               $.each(jdata, function(i, current) {
+
                   if ($.inArray(current.pid, inner) < 0) {
                       inner.push(current.pid);
-                      pids.push(current.pid);
+
+                  }
+                  if (!(current.pid in timeseries)) {
+                      pids[current.pid] = [current]
+                  }
+                  else {
+                      pids[current.pid].push(current);
                   }
                   if (!((current.timestamp-first_time) in timeseries)) {
                       timeseries[current.timestamp-first_time] = [current]
@@ -37,28 +44,26 @@
                   }
               });
 
-              $.each(timeseries, function(k, list) {
-                  var local = [k];
-                  $.each(pids, function(i, pid) {
-                      var sz = null;
-                      var j = k;
-                      while (sz == null) {
-                          $.each(timeseries[j], function(i, current) {
-                            if (current.pid == pid)
-                              sz = current.heap_size + current.old_heap_size;
-                          });
+              var keys = Object.keys(timeseries).sort();
 
-                          var keys = Object.keys(timeseries).sort();
-                          var loc = keys.indexOf(j);
-                          j = keys[loc-1];
-                          if (loc < 0)
+              $.each(timeseries, function(k, list) {
+                  var local = [parseInt(k)];
+                  $.each(pids, function(pid, elements) {
+                      var i = elements.length-1;
+                      var sz = null;
+                      while (i > -1) {
+                          var new_time = elements[i].timestamp - first_time;
+                          if (new_time <= parseInt(k)) {
+                              sz = elements[i].heap_size;
                               break;
+                          }
+                          i--;
                       }
                       local.push(sz);
                   });
                   arr.push(local);
               });
-              console.log(arr);
+
               var data = google.visualization.arrayToDataTable(arr);
 
               // Set chart options
