@@ -42,8 +42,10 @@ start() ->
 
 stop() ->
 	dbg:stop_clear(),
-	dbg:trace_client(file, "/tmp/trace.dmp", {fun handler/2, []}),
-	ok.
+	Pid = dbg:trace_client(file, "/tmp/trace.dmp", {fun handler/2, []}),
+        erlang:monitor(process, Pid),
+        receive M -> M end,
+        ok.
 
 handler(end_of_trace, Return) ->
 	Sorted = lists:sort(fun ([_,_,_,_,{<<"timestamp">>,X}], [_,_,_,_,{<<"timestamp">>,Y}]) -> X < Y end, Return),
