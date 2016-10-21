@@ -16,7 +16,9 @@
 
 start(_StartType, _StartArgs) ->
 	Dispatch = cowboy_router:compile([
-		{'_', [{"/", heap_profiler_handler, []}]}]),
+		{'_', [ {"/data", heap_profiler_handler, [json]},
+				{"/", heap_profiler_handler, ["index.html"]}]}
+	]),
 	{ok, _} = cowboy:start_clear(my_http_listener, 100,
 		[{port, 8080}],
 		#{env => #{dispatch => Dispatch}}

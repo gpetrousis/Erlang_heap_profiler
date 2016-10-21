@@ -1,6 +1,7 @@
 <html>
   <head>
     <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.js"></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
 
@@ -15,7 +16,7 @@
       // draws it.
       function drawChart() {
 
-        // Create the data table.
+		$.getJSON("data", function(jdata) {
         var data = new google.visualization.DataTable();
         data.addColumn('string', 'Topping');
         data.addColumn('number', 'Slices');
@@ -35,6 +36,9 @@
         // Instantiate and draw our chart, passing in some options.
         var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
         chart.draw(data, options);
+		});
+
+        // Create the data table.
       }
     </script>
   </head>
