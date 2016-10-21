@@ -13,10 +13,8 @@ polling_start() ->
 polling_start(L) -> 
 	Procs = erlang:processes() -- [self()],
 	Result = lists:flatmap(fun poll_func/1,Procs),
-        erlang:display({sampling,erlang:system_time(millisecond)}),
 	receive
 		stop -> 
-                        erlang:display({dump,erlang:system_time(millisecond)}),
 			dbg:stop_clear(),
 			Pid = dbg:trace_client(file, "/tmp/trace.dmp",
                                                {fun handler/2, Result}),
