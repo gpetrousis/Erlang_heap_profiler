@@ -11,7 +11,7 @@ polling_start(L) ->
 	Result = [poll_func(X) || X <- Procs],
 	receive
 		stop -> 
-			Output = jsx:encode(L),
+			Output = jsx:prettify(jsx:encode(L)),
 			file:write_file("dump.json", Output)
 	after 
 		?interval -> 
@@ -19,7 +19,8 @@ polling_start(L) ->
 	end.
 
 polling_stop(Pid) ->
-	Pid ! stop.
+	Pid ! stop,
+	ok.
 
 poll_func(Pid) ->
 	{_,Data} = erlang:process_info(Pid, garbage_collection_info),
@@ -41,10 +42,10 @@ stop() ->
 	dbg:trace_client(file, "/tmp/trace.dmp", {fun handler/2, []}),
 	ok.
 
-handler(end_of_trace, Return) -> 
+handler(end_of_trace, Return) ->
 	Output = jsx:encode(Return),
 	file:write_file("dump.json", Output);
-handler(M, Return) -> 
+handler(M, Return) ->
 	Return ++ parse(M).
 
 parse_trace(L) -> parse_trace(L, {0,0,0,0}).
@@ -63,9 +64,9 @@ parse_trace([X|Xs], {Ohbs, Hbs, Ohs, Hs}) ->
 
 parse({trace_ts, Pid, _, L, Timestamp}) ->
 	{_, _, Ohs, Hs} = parse_trace(L),
-	[{{<<"pid">>, list_to_binary(pid_to_list(Pid))}, 
+	[[{<<"pid">>, list_to_binary(pid_to_list(Pid))},
 	 {<<"type">>, <<"minor">>},
 	 {<<"old_heap_size">>, Ohs},
 	 {<<"heap_size">>, Hs},
-	 {<<"timestamp">>, erlang:convert_time_unit(Timestamp, native, millisecond) + erlang:time_offset(millisecond)}}
+	 {<<"timestamp">>, erlang:convert_time_unit(Timestamp, native, millisecond) + erlang:time_offset(millisecond)}]
 	].

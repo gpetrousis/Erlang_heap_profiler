@@ -21,16 +21,19 @@
               var timeseries = {};
               var pids = [];
               var arr = [inner];
+              var first_time = jdata[0].timestamp;
+              var last_time = jdata[jdata.length - 1];
+
               $.each(jdata, function(i, current) {
                   if ($.inArray(current.pid, inner) < 0) {
                       inner.push(current.pid);
                       pids.push(current.pid);
                   }
-                  if (!(current.timestamp in timeseries)) {
-                      timeseries[current.timestamp] = [current]
+                  if (!((current.timestamp-first_time) in timeseries)) {
+                      timeseries[current.timestamp-first_time] = [current]
                   }
                   else {
-                      timeseries[current.timestamp].push(current);
+                      timeseries[current.timestamp-first_time].push(current);
                   }
               });
 
@@ -38,14 +41,17 @@
                   var local = [k];
                   $.each(pids, function(i, pid) {
                       var sz = null;
-                      var j = parseInt(k);
+                      var j = k;
                       while (sz == null) {
                           $.each(timeseries[j], function(i, current) {
                             if (current.pid == pid)
                               sz = current.heap_size + current.old_heap_size;
                           });
-                          j--;
-                          if (j < 0)
+
+                          var keys = Object.keys(timeseries).sort();
+                          var loc = keys.indexOf(j);
+                          j = keys[loc-1];
+                          if (loc < 0)
                               break;
                       }
                       local.push(sz);
@@ -56,16 +62,32 @@
               var data = google.visualization.arrayToDataTable(arr);
 
               // Set chart options
-              var options = {'title':'How Much Pizza I Ate Last Night', 'width':600, 'height':300,
+              var options = {'title':'Heap Usage Over Time',
                   isStacked : true,
                   interpolateNulls : true,
-                  hAxis: {title : 'Time', titleTextStyle : {color : '#00000'}},
+                  hAxis: { title : 'Timestamp', titleTextStyle : {color : '#00000'}},
                   vAxis: {minValue:0}
               };
 
               // Instantiate and draw our chart, passing in some options.
               var chart = new google.visualization.AreaChart(document.getElementById('chart_div'));
               chart.draw(data, options);
+
+              google.visualization.events.addListener(chart, 'select', selectHandler);
+
+              function selectHandler() {
+                  var arr2 = [['Timestamp', 'Heap Size']];
+                  var selection = chart.getSelection();
+                  var proc = selection[0].column;
+
+                  for(i = 0; i < data.getNumberOfRows(); ++i) {
+                      arr2.push([data.getValue(i, 0), data.getValue(i, proc)]);
+                  }
+
+                  var d2 = google.visualization.arrayToDataTable(arr2);
+                  var c2 = new google.visualization.AreaChart(document.getElementById('chart_div_2'));
+                  c2.draw(d2, options);
+              }
           });
       }
     </script>
@@ -74,5 +96,6 @@
   <body>
     <!--Div that will hold the pie chart-->
     <div id="chart_div"></div>
+    <div id="chart_div_2"></div>
   </body>
 </html>
