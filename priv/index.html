@@ -27,13 +27,10 @@
               var pids = {};
               var arr = [inner];
               var first_time = jdata[0].timestamp;
-              var last_time = jdata[jdata.length - 1];
 
               $.each(jdata, function(i, current) {
-
                   if ($.inArray(current.pid, inner) < 0) {
                       inner.push(current.pid);
-
                   }
                   if (!(current.pid in pids)) {
                       pids[current.pid] = [current];
@@ -48,8 +45,6 @@
                       timeseries[current.timestamp-first_time].push(current);
                   }
               });
-
-              var keys = Object.keys(timeseries).sort();
 
               $.each(timeseries, function(k, list) {
                   var local = [parseInt(k)];
